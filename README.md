@@ -49,7 +49,7 @@ To run the server in a Docker container, execute the following from the root dir
 docker build -t reformers-model-api .
 
 ## Run server with Waitress WSGI server in docker container
-docker run --rm -p 8080:80 -v $PWD/auth-config.json:/auth-config.json reformers-model-api
+docker run --rm -d -p 8080:80 -v /var/run/docker.sock:/var/run/docker.sock -v $PWD/auth-config.json:/auth-config.json reformers-model-api
 ```
 
 *Options*: can be set as as environment variables for the container (flag `-e` / `--env`)

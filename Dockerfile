@@ -2,16 +2,17 @@ FROM python:3.9-alpine
 
 ENV PYTHONPATH=/app
 
-RUN apk update && apk add git
+# Install git & docker.
+RUN apk update && apk add git docker
 
-# Install requirements from OpenAPI generator
+# Install requirements from OpenAPI generator.
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
 # Install additional requirements.
+RUN pip install docker
 RUN pip install waitress
 RUN pip install git+https://github.com/REFORMERS-EnergyValleys/reformers-dt-model-repository-client.git
-RUN pip install docker
 
 COPY reformers_model_api_server /app/reformers_model_api_server
 
