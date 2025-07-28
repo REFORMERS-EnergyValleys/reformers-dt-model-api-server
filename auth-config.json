@@ -1,0 +1,13 @@
+{
+    "auths": {
+        "reformers-dev.ait.ac.at": {
+            "auth": "YWRtaW46YWRtaW4="
+        },
+        "reformers-dev.ait.ac.at:8082": {
+            "auth": "YWRtaW46YWRtaW4="
+        },
+        "reformers-dev.ait.ac.at:8083": {
+            "auth": "YWRtaW46YWRtaW4="
+        }
+    }
+}

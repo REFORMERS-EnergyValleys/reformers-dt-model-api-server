@@ -1,0 +1,567 @@
+openapi: 3.0.3
+info:
+  title: 'REFORMERS Digital Twin: Model API'
+  description: |
+    This API provides the model creation and validation capabilities of the digital twin.
+    A family of models, which can be data or equation-based, is created in an automated way by the digital twin.
+    The models differ in resolution and computational complexity, spanning different energy vectors (heat, electricity, gas) and having different time and component details.
+    The models are calibrated to real-world data.
+    These models are used by different digital twin services
+
+    _Funding acknowledgement_:
+    The [REFORMERS project](https://reformers-energyvalleys.eu) has received funding from the European Union’s research and innovation programme Horizon Europe under the [Grant Agreement No.101136211](https://cordis.europa.eu/project/id/101136211)
+  license:
+    name: BSD-2-Clause
+    url: https://opensource.org/license/bsd-2-clause
+  version: v0.1
+  x-logo:
+    url: https://reformers-energyvalleys.eu/root/wp-content/themes/rerformers-theme/assets/img/logo-reformers.svg
+    href: https://reformers-energyvalleys.eu
+servers:
+  - url: https://reformers-dev.vlab-central.ait.ac.at
+security:
+  - BearerAuthentication: []
+tags:
+  - name: Model Generators
+    description: Retrieve information about model generators
+  - name: Models
+    description: Create models and retrieve model information
+  - name: Status
+    description: Retrieve information about model generation tasks
+  - name: Info
+    description: Retrieve additional information about model API
+externalDocs:
+  description: Find out more about REFORMERS
+  url: https://reformers-energyvalleys.eu
+paths:
+  /:
+    get:
+      tags:
+        - Info
+      summary: Get authentication info
+      operationId: get_auth_info
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/info_auth'
+        '401':
+          $ref: '#/components/responses/unauthorized_error'
+        '403':
+          $ref: '#/components/responses/forbidden_error'
+  /model-generators:
+    get:
+      tags:
+        - Model Generators
+      summary: Get list of model generator names
+      operationId: list_model_generators
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/list_model_generators'
+        '401':
+          $ref: '#/components/responses/unauthorized_error'
+        '403':
+          $ref: '#/components/responses/forbidden_error'
+  /model-generators/{generator-name}/{generator-tag}:
+    get:
+      tags:
+        - Model Generators
+      summary: Get information about model generator
+      operationId: info_model_generator
+      parameters:
+        - name: generator-name
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/model_generator_name'
+        - name: generator-tag
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/model_generator_tag'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/info_model_generator'
+        '401':
+          $ref: '#/components/responses/unauthorized_error'
+        '403':
+          $ref: '#/components/responses/forbidden_error'
+        '404':
+          $ref: '#/components/responses/generator_not_found_error'
+        '500':
+          $ref: '#/components/responses/generator_info_invalid_error'
+  /model-generators/{generator-name}/{generator-tag}/models:
+    get:
+      tags:
+        - Models
+      summary: Get information about available models
+      operationId: list_models
+      parameters:
+        - name: generator-name
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/model_generator_name'
+        - name: generator-tag
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/model_generator_tag'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/list_models'
+        '401':
+          $ref: '#/components/responses/unauthorized_error'
+        '403':
+          $ref: '#/components/responses/forbidden_error'
+        '404':
+          $ref: '#/components/responses/generator_not_found_error'
+    post:
+      tags:
+        - Models
+      summary: Create new model
+      operationId: create_model
+      parameters:
+        - name: generator-name
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/model_generator_name'
+        - name: generator-tag
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/model_generator_tag'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/request_create_model'
+      responses:
+        '202':
+          description: Request has been accepted for processing, but processing has not finished yet.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/info_create_model'
+        '400':
+          description: Invalid model generator parameters
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/application_problem_json'
+              example:
+                detail: Invalid model generator parameters
+                status: 400
+                title: Bad Request
+                type: about:blank
+        '401':
+          $ref: '#/components/responses/unauthorized_error'
+        '403':
+          $ref: '#/components/responses/forbidden_error'
+        '404':
+          $ref: '#/components/responses/generator_not_found_error'
+        '500':
+          description: Creation of new model failed
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/application_problem_json'
+              example:
+                detail: Creation of new model failed
+                status: 500
+                title: Interal Server Error
+                type: about:blank
+  /model-generators/{generator-name}/{generator-tag}/status:
+    get:
+      tags:
+        - Status
+      summary: Retrieve information about model generation tasks
+      operationId: status_model_creation
+      parameters:
+        - name: generator-name
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/model_generator_name'
+        - name: generator-tag
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/model_generator_tag'
+        - name: task-id
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/task_id'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/info_create_model'
+        '400':
+          description: Invalid task ID
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/application_problem_json'
+              example:
+                detail: Invalid task ID
+                status: 400
+                title: Bad Request
+                type: about:blank
+        '401':
+          $ref: '#/components/responses/unauthorized_error'
+        '403':
+          $ref: '#/components/responses/forbidden_error'
+        '404':
+          $ref: '#/components/responses/generator_not_found_error'
+        '500':
+          description: Retrieval of information about model generation tasks failed
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/application_problem_json'
+              example:
+                detail: Failed to retrieve task information
+                status: 500
+                title: Interal Server Error
+                type: about:blank
+components:
+  securitySchemes:
+    BearerAuthentication:
+      type: http
+      scheme: bearer
+      bearerFormat: string of hexadecimal characters
+      x-bearerInfoFunc: reformers_model_api_server.controllers.security_controller.info_from_bearer_auth
+  schemas:
+    info_auth:
+      title: authentication debug information
+      type: object
+      properties:
+        date:
+          description: timestamp of token authentication
+          example: '2024-10-04T09:20:21.736525+00:00'
+          type: string
+    application_problem_json:
+      title: application error response
+      type: object
+      properties:
+        detail:
+          type: string
+        status:
+          type: integer
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
+    model_generator_tag:
+      type: string
+      title: model generator tag
+      pattern: ^[a-zA-Z0-9][a-zA-Z0-9-]+$
+      description: tag for a specific version of a model generator
+      example: v0
+    list_model_generators:
+      type: object
+      title: list of model generators
+      additionalProperties:
+        x-additionalPropertiesName: model-generator-name
+        type: array
+        items:
+          $ref: '#/components/schemas/model_generator_tag'
+    model_generator_name:
+      type: string
+      title: model generator name
+      pattern: ^[a-zA-Z0-9][a-zA-Z0-9-]+$
+      description: unique name for a model generator
+      example: example-generator
+    info_model_generator:
+      type: object
+      title: info about model generator invocation
+      required:
+        - generator_name
+        - generator_tag
+        - invocation_url
+      properties:
+        generator_name:
+          $ref: '#/components/schemas/model_generator_name'
+        generator_tag:
+          $ref: '#/components/schemas/model_generator_tag'
+        parameters:
+          title: model generator parameters
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              info:
+                type: string
+                description: detailed information about the parameter
+              default:
+                oneOf:
+                  - type: string
+                  - type: number
+                  - type: boolean
+                description: default value of the parameter
+            required:
+              - info
+              - default
+          example:
+            FOO:
+              info: a generator parameter
+              default: BAR
+            BAZ:
+              info: another generator parameter
+              default: 42
+        config:
+          title: model generator configuration
+          type: object
+          required:
+            - GENERATOR_REGISTRY
+            - MODEL_REGISTRY
+            - MODEL_DOCKERFILE
+          additionalProperties:
+            oneOf:
+              - type: string
+              - type: number
+              - type: boolean
+          example:
+            GENERATOR_REGISTRY: cyberdyne-systems.com:8082
+            MODEL_REGISTRY: cyberdyne-systems.com:8083
+            MODEL_DOCKERFILE: Dockerfile_skynet
+            HK_ENABLE: true
+        build:
+          title: optional info for the model image build process
+          type: object
+          example:
+            cache:
+              - SKYNET:0.1-alpha
+    model_parameters:
+      title: parameters for invoking the model
+      type: object
+      additionalProperties:
+        oneOf:
+          - type: string
+          - type: number
+      example:
+        foo: bar
+    model_optional_parameters:
+      title: optional parameters for invoking the model
+      type: object
+      additionalProperties:
+        oneOf:
+          - type: string
+          - type: number
+      example:
+        foo: bar
+    model_format:
+      type: string
+      title: model format
+      enum:
+        - docker
+        - maven
+    info_model:
+      type: object
+      title: info about model
+      description: provides information about the model, including information about either the associated image or artifact
+      required:
+        - parameters
+        - optional_parameters
+        - generation_parameters
+        - format
+      properties:
+        parameters:
+          $ref: '#/components/schemas/model_parameters'
+        optional_parameters:
+          $ref: '#/components/schemas/model_optional_parameters'
+        generation_parameters:
+          type: object
+          title: model generator parameters used for creating this model
+          additionalProperties:
+            oneOf:
+              - type: string
+              - type: number
+          example:
+            foo: bar
+        format:
+          $ref: '#/components/schemas/model_format'
+        image-name:
+          type: string
+          title: name of model image
+          pattern: ^[a-zA-Z0-9][a-zA-Z0-9-_\/]+$
+          example: reformers/el-grid-pandapower/v1/1-MVLV-urban-all-0-sw
+        image-tag:
+          type: string
+          title: tag of model image
+          pattern: ^[a-zA-Z0-9][a-zA-Z0-9-_]+$
+          example: latest-dev
+        artifact-group-id:
+          type: string
+          title: group ID of model artifact
+          pattern: ^[a-zA-Z0-9][a-zA-Z0-9-_.]+[a-zA-Z0-9-_]+$
+          example: reformers.el-grid-pandapower.v1-0
+        artifact-id:
+          type: string
+          title: ID (name) of model artifact
+          pattern: ^[a-zA-Z0-9-_]+$
+          example: 1-MVLV-urban-all-0-sw:latest-dev
+        artifact-version:
+          type: string
+          title: version of model artifact
+          pattern: ^[a-zA-Z0-9-_.]+$
+          example: latest-dev
+        artifact-type:
+          type: string
+          title: file extension of model artifact
+          pattern: ^[a-zA-Z0-9]+$
+          example: py
+    list_models:
+      type: object
+      title: list of models
+      properties:
+        generator_name:
+          $ref: '#/components/schemas/model_generator_name'
+        generator_tag:
+          $ref: '#/components/schemas/model_generator_tag'
+        models:
+          type: object
+          additionalProperties:
+            x-additionalPropertiesName: model-name
+            type: object
+            additionalProperties:
+              x-additionalPropertiesName: model-tag
+              $ref: '#/components/schemas/info_model'
+    model_name:
+      type: string
+      title: model name
+      pattern: ^[a-z0-9][a-z0-9-]+$
+      description: unique name for a model
+      example: mvlv-urban-all-0-sw
+    model_tag:
+      type: string
+      title: model generator tag
+      pattern: ^[a-z0-9][a-z0-9-]+$
+      description: tag for a specific version of a model
+      example: v1
+    request_create_model:
+      type: object
+      title: request for model generation
+      required:
+        - model_name
+        - model_tag
+      properties:
+        model_name:
+          $ref: '#/components/schemas/model_name'
+        model_tag:
+          $ref: '#/components/schemas/model_tag'
+        parameters:
+          type: object
+          title: model generator parameters used for creating this model
+          additionalProperties:
+            oneOf:
+              - type: string
+              - type: number
+              - type: boolean
+          example:
+            foo: bar
+      x-body-name: request_create_model
+    task_id:
+      type: string
+      title: ID of model generation task
+      pattern: ^(?=(.{4})*$)[A-Za-z0-9+/]*={0,2}$
+      example: Z3JpZC1zaW06djA6MTc0MzUzNTQ1Ni41Nzc5MzE=
+    info_create_model:
+      type: object
+      title: info about model generation task
+      description: provides information about the task for creating a new model
+      required:
+        - task-id
+        - status
+        - creation-date
+      properties:
+        task-id:
+          $ref: '#/components/schemas/task_id'
+        status:
+          type: string
+          title: status of model generation task
+          enum:
+            - pending
+            - finished
+            - superseded
+            - failed
+          description: |-
+            * `pending` - task has not yet finished
+            * `finished` - task has finished successfully and the new model container image is available in the registry
+            * `superseded` - a newer task has generated a model container image that is available in the registry
+            * `failed` - task has failed and has not generated a new model container image in the registry
+          example: finished
+        creation-date:
+          type: string
+          title: date and time of task creation
+          format: date-time
+          example: '2025-07-21T17:32:28Z'
+        info:
+          type: string
+          title: additional information on task
+  responses:
+    unauthorized_error:
+      description: Bearer access token is missing
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/application_problem_json'
+          example:
+            detail: No authorization token provided
+            status: 401
+            title: Unauthorized
+            type: about:blank
+    forbidden_error:
+      description: Invalid bearer token
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/application_problem_json'
+          example:
+            detail: Provided token is not valid
+            status: 403
+            title: Forbidden
+            type: about:blank
+    generator_not_found_error:
+      description: Model generator not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/application_problem_json'
+          example:
+            detail: Model generator not found
+            status: 404
+            title: Not Found
+            type: about:blank
+    generator_info_invalid_error:
+      description: Model generator info invalid
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/application_problem_json'
+          example:
+            detail: Model generator info invalid
+            status: 500
+            title: Internal Server Error
+            type: about:blank
