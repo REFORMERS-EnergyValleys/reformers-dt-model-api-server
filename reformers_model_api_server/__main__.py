@@ -5,7 +5,7 @@ import click
 @click.command()
 @click.option('-s', '--specification', default='openapi.yaml', help='OpenAPI specification file name (relative to subfolder \'openapi\')')
 @click.option('-h', '--host', default='reformers-dev.ait.ac.at', help='URL to repository')
-@click.option('--registry-auth-config', default='auth-configXXX.json', help='path to authentication config file for accessing the container registries')
+@click.option('--registry-auth-config', default='auth-config.json', help='path to authentication config file for accessing the container registries')
 @click.option('--repo-auth-config', default='auth-config.json', help='path to authentication config file for accessing the repository')
 @click.option('--remove-containers', default=True, help='set this to false to remove containers after they have exited')
 @click.option('--verify-ssl', default=False, help='set this to true to verify SSL certificates')
