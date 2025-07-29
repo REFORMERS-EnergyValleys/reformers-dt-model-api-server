@@ -241,11 +241,8 @@ def search_add_model_images_with_tags(
     )
 
     # Retrieve meta-information about (optional) runtime arguments for this specific model.
-    model_parameters = get_from_nested_dict(
-        image_labels, [model_name, model_version],
-        default={'optional': {}},
-    )
-    model_optional_parameters = model_parameters.pop('optional')
+    model_parameters = generation_parameters.pop('parameters', {'optional': {}})
+    model_optional_parameters = model_parameters.pop('optional', {})
 
     image_info = InfoModel(
         parameters=model_parameters,
