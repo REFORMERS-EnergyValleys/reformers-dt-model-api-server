@@ -4,21 +4,40 @@ import pathlib
 
 from base64 import b64decode
 from flask import current_app
+from warnings import warn
 
 from reformers_model_api_server import encoder
 from reformers_model_repo_client import Configuration, ApiClient, RepositorySettingsApi
 
 
-def start_app(specification, host, auth_config, remove_containers, verify_ssl):
+def start_app(specification, host, registry_auth_config_file, repo_auth_config_file, remove_containers, verify_ssl):
+    """
+    Docstring for start_app
 
+    :param specification: OpenAPI specification file name (relative to subfolder 'openapi')
+    :param host: URL to repository
+    :param registry_auth_config_file: path to authentication config file for accessing the container registries
+    :param repo_auth_config_file: path to authentication config file for accessing the repository
+    :param remove_containers: set this to false to remove containers after they have exited
+    :param verify_ssl: set this to true to verify SSL certificates
+    """
     openapi_dir = pathlib.Path(__file__).parent / 'openapi'
     specification_file = openapi_dir / specification
     specification_file = specification_file.resolve(strict=True)
 
-    auth_config_file = pathlib.Path(auth_config)
-    auth_config_file = auth_config_file.resolve(strict=True)
+    registry_auth_config = pathlib.Path(registry_auth_config_file)
+    try:
+        registry_auth_config = registry_auth_config.resolve(strict=True)
+    except OSError:
+        warn(
+            f'path {registry_auth_config} could not be resoved',
+            category=RuntimeWarning
+        )
 
-    with open(auth_config_file, 'r') as f:
+    repo_auth_config_file = pathlib.Path(repo_auth_config_file)
+    repo_auth_config_file = repo_auth_config_file.resolve(strict=True)
+
+    with open(repo_auth_config_file, 'r') as f:
         config = json.load(f)
         auth_config = config.get('auths', dict())
 
@@ -47,7 +66,7 @@ def start_app(specification, host, auth_config, remove_containers, verify_ssl):
     with flask_app.app.app_context():
 
         current_app.repo_client = ApiClient(repo_config)
-        current_app.auth_config_file = auth_config_file
+        current_app.registry_auth_config = registry_auth_config
 
         repo_settings_api = RepositorySettingsApi(current_app.repo_client)
         current_app.repo_settings = {
@@ -67,8 +86,9 @@ def start_app_from_env():
 
     specification = os.environ.get('SPECIFICATION', default='openapi.yaml')
     host = os.environ.get('HOST', default='reformers-dev.ait.ac.at')
-    auth_config = os.environ.get('AUTH_CONFIG', default='auth-config.json')
-    remove = __parse_to_bool(os.environ.get('REMOVE-containers', default='True'))
+    registry_auth_config_file = os.environ.get('REGISTRY_AUTH_CONFIG', default='auth-config.json')
+    repo_auth_config_file = os.environ.get('REPO_AUTH_CONFIG', default='auth-config.json')
+    remove = __parse_to_bool(os.environ.get('REMOVE_CONTAINERS', default='True'))
     verify_ssl = __parse_to_bool(os.environ.get('VERIFY_SSL', default='False'))
 
-    return start_app(specification, host, auth_config, remove, verify_ssl)
+    return start_app(specification, host, registry_auth_config_file, repo_auth_config_file, remove, verify_ssl)
