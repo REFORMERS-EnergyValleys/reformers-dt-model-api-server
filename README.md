@@ -46,19 +46,19 @@ http://localhost:8080/openapi.json
 
 Build container image using a [Waitress WSGI server](https://docs.pylonsproject.org/projects/waitress/en/latest/) for the deployment of the Model API server:
 ```sh
-docker build -t reformers-model-api .
+docker build -t reformers-energyvalleys/model-api-server .
 ```
 
 To run the server in a Docker container, execute the following from the root directory:
 
 Linux:
 ```bash
-docker run --rm -d -p 8080:80 -v /var/run/docker.sock:/var/run/docker.sock -v $PWD/auth-config.json:/auth-config.json -e REGISTRY_AUTH_CONFIG=$PWD/auth-config.json reformers-model-api
+docker run --rm -d -p 8080:80 -v /var/run/docker.sock:/var/run/docker.sock -v $PWD/auth-config.json:/auth-config.json -e REGISTRY_AUTH_CONFIG=$PWD/auth-config.json reformers-energyvalleys/model-api-server
 ```
 
 Windows:
 ```cmd
-docker run --rm -d -p 8080:80 -v /var/run/docker.sock:/var/run/docker.sock -v %CD%\auth-config.json:/auth-config.json -e REGISTRY_AUTH_CONFIG=%CD%\auth-config.json reformers-model-api
+docker run --rm -d -p 8080:80 -v /var/run/docker.sock:/var/run/docker.sock -v %CD%\auth-config.json:/auth-config.json -e REGISTRY_AUTH_CONFIG=%CD%\auth-config.json reformers-energyvalleys/model-api-server
 ```
 
 *Options*: can be set as as environment variables for the container (flag `-e` / `--env`)
