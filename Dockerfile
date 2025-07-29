@@ -16,4 +16,4 @@ RUN pip install git+https://github.com/REFORMERS-EnergyValleys/reformers-dt-mode
 
 COPY reformers_model_api_server /app/reformers_model_api_server
 
-CMD ["waitress-serve", "--listen=*:80", "--call", "reformers_model_api_server.start_app:start_app_from_env"]
+CMD ["waitress-serve", "--listen=*:80", "--url-prefix=api", "--call", "reformers_model_api_server.start_app:start_app_from_env"]
