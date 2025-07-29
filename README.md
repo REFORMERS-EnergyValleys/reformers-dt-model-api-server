@@ -43,19 +43,29 @@ http://localhost:8080/openapi.json
 
 ## Running with Docker
 
+
+Build container image using a [Waitress WSGI server](https://docs.pylonsproject.org/projects/waitress/en/latest/) for the deployment of the Model API server:
+```sh
+docker build -t reformers-model-api .
+```
+
 To run the server in a Docker container, execute the following from the root directory:
 
+Linux:
 ```bash
-docker build -t reformers-model-api .
+docker run --rm -d -p 8080:80 -v /var/run/docker.sock:/var/run/docker.sock -v $PWD/auth-config.json:/auth-config.json -e REGISTRY_AUTH_CONFIG=$PWD/auth-config.json reformers-model-api
+```
 
-## Run server with Waitress WSGI server in docker container
-docker run --rm -d -p 8080:80 -v /var/run/docker.sock:/var/run/docker.sock -v $PWD/auth-config.json:/auth-config.json reformers-model-api
+Windows:
+```cmd
+docker run --rm -d -p 8080:80 -v /var/run/docker.sock:/var/run/docker.sock -v %CD%\auth-config.json:/auth-config.json -e REGISTRY_AUTH_CONFIG=%CD%\auth-config.json reformers-model-api
 ```
 
 *Options*: can be set as as environment variables for the container (flag `-e` / `--env`)
 
 + `SPECIFICATION`: OpenAPI specification file name
 + `HOST`: URL to repository
-+ `AUTH_CONFIG`: path to authentication config file (see [`auth-config.json`](./auth-config.json) for an example)
++ `REGISTRY_AUTH_CONFIG`: path to authentication config file for accessing the container registries
++ `REPO_AUTH_CONFIG`: path to authentication config file for accessing the repository
 + `REMOVE_CONTAINERS`: set this to `false` (or `0`) to remove containers after they have exited
 + `VERIFY_SSL`: set this to `false` (or `0`) to skip verifying SSL certificates
