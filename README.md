@@ -13,6 +13,7 @@ The [REFORMERS project](https://reformers-energyvalleys.eu) has received funding
 Python 3.5.2+
 
 ## Usage
+
 To run the server, please execute the following from the root directory:
 
 ```
@@ -29,20 +30,22 @@ python3 -m reformers_model_api_server
 + `--verify-ssl BOOLEAN` set this to false to skip verifying SSL certificates
 + `--help`: show help message and exit
 
+**NOTE**:
+For the server to start-up, the repository as defined via `-h` / `--host` must be reachable.
+
 Open your browser to here:
 
 ```
-http://localhost:8080/ui/
+http://localhost:8080/api/ui/
 ```
 
 The OpenAPI definition lives here:
 
 ```
-http://localhost:8080/openapi.json
+http://localhost:8080/api/openapi.json
 ```
 
 ## Running with Docker
-
 
 Build container image using a [Waitress WSGI server](https://docs.pylonsproject.org/projects/waitress/en/latest/) for the deployment of the Model API server:
 ```sh
