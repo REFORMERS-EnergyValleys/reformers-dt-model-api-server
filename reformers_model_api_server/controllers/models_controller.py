@@ -3,6 +3,7 @@ import connexion
 import docker
 import docker.models.containers
 
+from connexion.problem import problem
 from datetime import datetime, timezone
 from flask import current_app
 from functools import partial
@@ -10,7 +11,6 @@ from time import sleep
 from typing import Any, Union, Tuple
 from urllib.parse import urlparse
 
-from reformers_model_api_server.models.application_problem_json import ApplicationProblemJson  # noqa: E501
 from reformers_model_api_server.models.info_create_model import InfoCreateModel  # noqa: E501
 from reformers_model_api_server.models.info_model import InfoModel  # noqa: E501
 from reformers_model_api_server.models.info_model_generator import InfoModelGenerator  # noqa: E501
@@ -25,7 +25,7 @@ def create_model(
         generator_name: str,
         generator_tag: str,
         request_create_model: Union[dict, bytes]
-    ) -> Union[Tuple[InfoModel, int], ApplicationProblemJson]:
+    ) -> Union[Tuple[InfoModel, int], problem]:
     """
     Create new model
 
@@ -35,10 +35,10 @@ def create_model(
     :type generator_tag: str
     :param request_create_model:
     :type request_create_model: dict | bytes
-    :rtype: Union[Tuple[InfoModel, int], ApplicationProblemJson]
+    :rtype: Union[Tuple[InfoModel, int], problem]
     """
     if not connexion.request.is_json:
-        return ApplicationProblemJson(
+        return problem(
             title="Interal Server Error",
             detail="Creation of new model failed: request body is not JSON data",
             status=500,
@@ -56,7 +56,7 @@ def create_model(
         if info_create_model.parameters:
             for p in info_create_model.parameters.keys():
                 if not (p in info_generator.config or p in info_generator.parameters):
-                    return ApplicationProblemJson(
+                    return problem(
                         title='Bad Request',
                         detail=f'Invalid model generator parameters: unknown parameter ({p})',
                         status=400,
@@ -79,7 +79,7 @@ def create_model(
             registry_info = current_app.repo_settings['model-generators']
             registry_format = registry_info.format
             if 'docker' != registry_format:
-                return ApplicationProblemJson(
+                return problem(
                     title='Interal Server Error',
                     detail='Creation of new model failed: generator container registry not configured',
                     status=500,
@@ -128,7 +128,7 @@ def create_model(
 
     except Exception as ex:
 
-        return ApplicationProblemJson(
+        return problem(
             title='Interal Server Error',
             detail=f'Creation of new model failed: {ex}',
             status=500,
@@ -138,7 +138,7 @@ def create_model(
 def list_models(
           generator_name: str,
           generator_tag: str
-    ) -> Union[ListModels, ApplicationProblemJson]:
+    ) -> Union[ListModels, problem]:
     """
     Get information about available models
 
@@ -153,7 +153,7 @@ def list_models(
 
     # Check generator name.
     if generator_name not in available_model_generators:
-        return ApplicationProblemJson(
+        return problem(
             title='Not Found',
             detail='Model generator not found',
             status=404,
@@ -162,7 +162,7 @@ def list_models(
 
     # Check generator tag.
     if generator_tag not in available_model_generators[generator_name]:
-        return ApplicationProblemJson(
+        return problem(
             title='Not Found',
             detail='Model generator not found (unknown version)',
             status=404,

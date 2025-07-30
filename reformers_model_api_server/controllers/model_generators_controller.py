@@ -1,23 +1,19 @@
 # import connexion
+from connexion.problem import problem
 from flask import current_app
-
 from functools import partial
-
 from typing import Any, Union
 
-from reformers_model_api_server.models.application_problem_json import ApplicationProblemJson  # noqa: E501
 from reformers_model_api_server.models.info_model_generator import InfoModelGenerator  # noqa: E501
 from reformers_model_api_server.controllers.util import convert_to_nested_dict, paginated_search  # noqa: E501
-# from reformers_model_api_server import util
 
 from reformers_model_repo_client import RetrieveBlobsApi, RetrieveManifestsApi, SearchRepositoryApi
 from reformers_model_repo_client.exceptions import NotFoundException
 
-
 def info_model_generator(
         generator_name: str,
         generator_tag: str
-    ) -> Union[InfoModelGenerator, ApplicationProblemJson]:
+    ) -> Union[InfoModelGenerator, problem]:
     """
     Get information about model generator
 
@@ -25,7 +21,7 @@ def info_model_generator(
     :type generator_name: str
     :param generator_tag:
     :type generator_tag: str
-    :rtype: Union[InfoModelGenerator, ApplicationProblemJson]
+    :rtype: Union[InfoModelGenerator, problem]
     """
     with current_app.app_context():
 
@@ -35,7 +31,7 @@ def info_model_generator(
             # Retrieve manifest of model generator image from the repository.
             manifest = manifest_api_instance.get_manifest_generator(generator_name, generator_tag)
         except NotFoundException as e:
-            return ApplicationProblemJson(
+            return problem(
                 title='Not Found',
                 detail='Model generator not found',
                 status=404,
@@ -53,7 +49,7 @@ def info_model_generator(
             raise Exception(f'Exception when calling RetrieveBlobsApi->get_blob_generator: {e}\n')
 
         if not blob.config.labels:
-            return ApplicationProblemJson(
+            return problem(
                 title='Internal Server Error',
                 detail='Model generator info invalid (labels missing)',
                 status=500,
@@ -63,7 +59,7 @@ def info_model_generator(
         # Get configuration labels from blob.
         config_labels = convert_to_nested_dict(blob.config.labels)
         if not ((generator_name in config_labels) and (generator_tag in config_labels[generator_name])):
-            return ApplicationProblemJson(
+            return problem(
                 title='Internal Server Error',
                 detail='Model generator info invalid (labels missing)',
                 status=500,

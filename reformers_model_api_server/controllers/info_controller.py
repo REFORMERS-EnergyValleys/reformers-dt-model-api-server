@@ -3,7 +3,6 @@ from typing import Dict
 from typing import Tuple
 from typing import Union
 
-from reformers_model_api_server.models.application_problem_json import ApplicationProblemJson  # noqa: E501
 from reformers_model_api_server.models.info_auth import InfoAuth  # noqa: E501
 from reformers_model_api_server import util
 

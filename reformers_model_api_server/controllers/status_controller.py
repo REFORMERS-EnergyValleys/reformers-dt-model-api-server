@@ -2,13 +2,13 @@ import connexion
 import docker
 import docker.models.containers
 
+from connexion.problem import problem
 from enum import Enum
 from datetime import datetime
 from dateutil import parser as datetimeparser
 from flask import current_app
 from typing import Optional, Tuple, Union
 
-from reformers_model_api_server.models.application_problem_json import ApplicationProblemJson  # noqa: E501
 from reformers_model_api_server.models.info_create_model import InfoCreateModel  # noqa: E501
 from reformers_model_api_server.models.info_model_generator import InfoModelGenerator  # noqa: E501
 from reformers_model_api_server.controllers.model_generators_controller import info_model_generator
@@ -37,7 +37,7 @@ def status_model_creation(
         generator_name: str,
         generator_tag: str,
         task_id: str
-    ) -> Union[InfoCreateModel, ApplicationProblemJson]: # noqa: E501
+    ) -> Union[InfoCreateModel, problem]: # noqa: E501
     """
     Retrieve information about model generation tasks
 
@@ -47,7 +47,7 @@ def status_model_creation(
     :type generator_tag: str
     :param task_id: ID of model generation task
     :type task_id: str
-    :rtype: Union[InfoCreateModel, ApplicationProblemJson]
+    :rtype: Union[InfoCreateModel, problem]
     """
     try:
         # Get info on model generator.
@@ -59,7 +59,7 @@ def status_model_creation(
         model_name, model_tag, task_creation_date = decode_task_id(task_id)
 
     except Exception as ex:
-        return ApplicationProblemJson(
+        return problem(
             title='Bad Request',
             detail=f'Invalid task ID: {ex}',
             status=400,
@@ -75,7 +75,7 @@ def status_model_creation(
         )
 
     except Exception as ex:
-        return ApplicationProblemJson(
+        return problem(
             title='Interal Server Error',
             detail=f'Failed to retrieve task information: {ex}',
             status=500,
