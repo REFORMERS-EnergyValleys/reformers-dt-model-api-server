@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: 'REFORMERS Digital Twin: Model API'
+  title: 'REFORMERS Digital Twin: Model API Server'
   description: |
     This API provides the model creation and validation capabilities of the digital twin.
     A family of models, which can be data or equation-based, is created in an automated way by the digital twin.
@@ -11,8 +11,8 @@ info:
     _Funding acknowledgement_:
     The [REFORMERS project](https://reformers-energyvalleys.eu) has received funding from the European Union’s research and innovation programme Horizon Europe under the [Grant Agreement No.101136211](https://cordis.europa.eu/project/id/101136211)
   license:
-    name: BSD-2-Clause
-    url: https://opensource.org/license/bsd-2-clause
+    name: MIT
+    url: https://opensource.org/license/mit
   version: v0.1
   x-logo:
     url: https://reformers-energyvalleys.eu/root/wp-content/themes/rerformers-theme/assets/img/logo-reformers.svg
@@ -371,6 +371,12 @@ components:
           - type: number
       example:
         foo: bar
+    model_info:
+      type: string
+      title: model information
+      pattern: ^[a-z0-9][a-z0-9-]+$
+      description: may contain detailled information about the model
+      example: Simple heating system with a closed flow cycle. After 2000s of simulation time the valve fully opens. A simple idealized control is embedded into the respective components, so that the heating system can be regulated with the valve, i.e., the pump controls the pressure, the burner controls the temperature.
     model_format:
       type: string
       title: model format
@@ -391,6 +397,8 @@ components:
           $ref: '#/components/schemas/model_parameters'
         optional_parameters:
           $ref: '#/components/schemas/model_optional_parameters'
+        info:
+          $ref: '#/components/schemas/model_info'
         generation_parameters:
           type: object
           title: model generator parameters used for creating this model

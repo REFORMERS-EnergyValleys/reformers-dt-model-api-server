@@ -18,13 +18,15 @@ class InfoModel(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, parameters=None, optional_parameters=None, generation_parameters=None, format=None, image_name=None, image_tag=None, artifact_group_id=None, artifact_id=None, artifact_version=None, artifact_type=None):  # noqa: E501
+    def __init__(self, parameters=None, optional_parameters=None, info=None, generation_parameters=None, format=None, image_name=None, image_tag=None, artifact_group_id=None, artifact_id=None, artifact_version=None, artifact_type=None):  # noqa: E501
         """InfoModel - a model defined in OpenAPI
 
         :param parameters: The parameters of this InfoModel.  # noqa: E501
         :type parameters: Dict[str, ModelParametersValue]
         :param optional_parameters: The optional_parameters of this InfoModel.  # noqa: E501
         :type optional_parameters: Dict[str, ModelParametersValue]
+        :param info: The info of this InfoModel.  # noqa: E501
+        :type info: str
         :param generation_parameters: The generation_parameters of this InfoModel.  # noqa: E501
         :type generation_parameters: Dict[str, ModelParametersValue]
         :param format: The format of this InfoModel.  # noqa: E501
@@ -45,6 +47,7 @@ class InfoModel(Model):
         self.openapi_types = {
             'parameters': Dict[str, ModelParametersValue],
             'optional_parameters': Dict[str, ModelParametersValue],
+            'info': str,
             'generation_parameters': Dict[str, ModelParametersValue],
             'format': ModelFormat,
             'image_name': str,
@@ -58,6 +61,7 @@ class InfoModel(Model):
         self.attribute_map = {
             'parameters': 'parameters',
             'optional_parameters': 'optional_parameters',
+            'info': 'info',
             'generation_parameters': 'generation_parameters',
             'format': 'format',
             'image_name': 'image-name',
@@ -70,6 +74,7 @@ class InfoModel(Model):
 
         self._parameters = parameters
         self._optional_parameters = optional_parameters
+        self._info = info
         self._generation_parameters = generation_parameters
         self._format = format
         self._image_name = image_name
@@ -135,6 +140,31 @@ class InfoModel(Model):
             raise ValueError("Invalid value for `optional_parameters`, must not be `None`")  # noqa: E501
 
         self._optional_parameters = optional_parameters
+
+    @property
+    def info(self) -> str:
+        """Gets the info of this InfoModel.
+
+        may contain detailled information about the model  # noqa: E501
+
+        :return: The info of this InfoModel.
+        :rtype: str
+        """
+        return self._info
+
+    @info.setter
+    def info(self, info: str):
+        """Sets the info of this InfoModel.
+
+        may contain detailled information about the model  # noqa: E501
+
+        :param info: The info of this InfoModel.
+        :type info: str
+        """
+        if info is not None and not re.search(r'^[a-z0-9][a-z0-9-]+$', info):  # noqa: E501
+            raise ValueError(r"Invalid value for `info`, must be a follow pattern or equal to `/^[a-z0-9][a-z0-9-]+$/`")  # noqa: E501
+
+        self._info = info
 
     @property
     def generation_parameters(self) -> Dict[str, ModelParametersValue]:

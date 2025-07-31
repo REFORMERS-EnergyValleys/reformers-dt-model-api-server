@@ -20,10 +20,10 @@ REQUIRES = [
 setup(
     name=NAME,
     version=VERSION,
-    description="REFORMERS Digital Twin: Model API",
+    description="REFORMERS Digital Twin: Model API Server",
     author_email="",
     url="",
-    keywords=["OpenAPI", "REFORMERS Digital Twin: Model API"],
+    keywords=["OpenAPI", "REFORMERS Digital Twin: Model API Server"],
     install_requires=REQUIRES,
     packages=find_packages(),
     package_data={'': ['openapi/openapi.yaml']},

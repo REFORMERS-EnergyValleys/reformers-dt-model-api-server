@@ -10,9 +10,9 @@ info:
     _Funding acknowledgement_:
     The [REFORMERS project](https://reformers-energyvalleys.eu) has received funding from the European Union’s research and innovation programme Horizon Europe under the [Grant Agreement No.101136211](https://cordis.europa.eu/project/id/101136211)
   license:
-    name: BSD-2-Clause
-    url: https://opensource.org/license/bsd-2-clause
-  title: "REFORMERS Digital Twin: Model API"
+    name: MIT
+    url: https://opensource.org/license/mit
+  title: "REFORMERS Digital Twin: Model API Server"
   version: v0.1
   x-logo:
     url: https://reformers-energyvalleys.eu/root/wp-content/themes/rerformers-theme/assets/img/logo-reformers.svg
@@ -601,6 +601,16 @@ components:
         foo: bar
       title: optional parameters for invoking the model
       type: object
+    model_info:
+      description: may contain detailled information about the model
+      example: "Simple heating system with a closed flow cycle. After 2000s of simulation\
+        \ time the valve fully opens. A simple idealized control is embedded into\
+        \ the respective components, so that the heating system can be regulated with\
+        \ the valve, i.e., the pump controls the pressure, the burner controls the\
+        \ temperature."
+      pattern: "^[a-z0-9][a-z0-9-]+$"
+      title: model information
+      type: string
     model_format:
       enum:
       - docker
@@ -624,6 +634,11 @@ components:
         parameters:
           foo: bar
         image-tag: latest-dev
+        info: "Simple heating system with a closed flow cycle. After 2000s of simulation\
+          \ time the valve fully opens. A simple idealized control is embedded into\
+          \ the respective components, so that the heating system can be regulated\
+          \ with the valve, i.e., the pump controls the pressure, the burner controls\
+          \ the temperature."
       properties:
         parameters:
           additionalProperties:
@@ -639,6 +654,16 @@ components:
             foo: bar
           title: optional parameters for invoking the model
           type: object
+        info:
+          description: may contain detailled information about the model
+          example: "Simple heating system with a closed flow cycle. After 2000s of\
+            \ simulation time the valve fully opens. A simple idealized control is\
+            \ embedded into the respective components, so that the heating system\
+            \ can be regulated with the valve, i.e., the pump controls the pressure,\
+            \ the burner controls the temperature."
+          pattern: "^[a-z0-9][a-z0-9-]+$"
+          title: model information
+          type: string
         generation_parameters:
           additionalProperties:
             $ref: '#/components/schemas/model_parameters_value'
@@ -703,6 +728,11 @@ components:
               parameters:
                 foo: bar
               image-tag: latest-dev
+              info: "Simple heating system with a closed flow cycle. After 2000s of\
+                \ simulation time the valve fully opens. A simple idealized control\
+                \ is embedded into the respective components, so that the heating\
+                \ system can be regulated with the valve, i.e., the pump controls\
+                \ the pressure, the burner controls the temperature."
         generator_name: example-generator
         generator_tag: v0
       properties:
