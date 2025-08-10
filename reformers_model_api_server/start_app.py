@@ -9,22 +9,17 @@ from warnings import warn
 from reformers_model_api_server import encoder
 from reformers_model_repo_client import Configuration, ApiClient, RepositorySettingsApi
 
-
-def start_app(specification, host, registry_auth_config_file, repo_auth_config_file, remove_containers, verify_ssl):
+def get_registry_auth_config(
+        registry_auth_config_file: str
+    ) -> pathlib.Path:
     """
-    Docstring for start_app
+    Retrieve authentication config for accessing the container registries.
 
-    :param specification: OpenAPI specification file name (relative to subfolder 'openapi')
-    :param host: URL to repository
-    :param registry_auth_config_file: path to authentication config file for accessing the container registries
-    :param repo_auth_config_file: path to authentication config file for accessing the repository
-    :param remove_containers: set this to false to remove containers after they have exited
-    :param verify_ssl: set this to true to verify SSL certificates
+    :param registry_auth_config_file: path to authentication config file
+    :type registry_auth_config_file: str
+    :return: authentication config
+    :rtype: Path
     """
-    openapi_dir = pathlib.Path(__file__).parent / 'openapi'
-    specification_file = openapi_dir / specification
-    specification_file = specification_file.resolve(strict=True)
-
     registry_auth_config = pathlib.Path(registry_auth_config_file)
     try:
         registry_auth_config = registry_auth_config.resolve(strict=True)
@@ -34,6 +29,22 @@ def start_app(specification, host, registry_auth_config_file, repo_auth_config_f
             category=RuntimeWarning
         )
 
+    return registry_auth_config
+
+def get_repo_auth(
+        host: str,
+        repo_auth_config_file: str
+    ) -> tuple[str, str]:
+    """
+    Retrieve authentication config for accessing the repository.
+
+    :param host: host name
+    :type host: str
+    :param repo_auth_config_file: path to authentication config file
+    :type repo_auth_config_file: str
+    :return: tuple with username and password
+    :rtype: tuple[str, str]
+    """
     repo_auth_config_file = pathlib.Path(repo_auth_config_file)
     repo_auth_config_file = repo_auth_config_file.resolve(strict=True)
 
@@ -49,6 +60,34 @@ def start_app(specification, host, registry_auth_config_file, repo_auth_config_f
     repo_auth = repo_auth_info.split(':')
     if not 2 == len(repo_auth):
         raise RuntimeError('Invalid repository credentials format')
+
+    return repo_auth
+
+def start_app(
+        specification: str,
+        host: str,
+        registry_auth_config_file: str,
+        repo_auth_config_file: str,
+        remove_containers: bool,
+        verify_ssl: bool
+    ) -> connexion.App:
+    """
+    Start the server running the model API app.
+
+    :param specification: OpenAPI specification file name (relative to subfolder 'openapi')
+    :param host: URL to repository
+    :param registry_auth_config_file: path to authentication config file for accessing the container registries
+    :param repo_auth_config_file: path to authentication config file for accessing the repository
+    :param remove_containers: set this to false to remove containers after they have exited
+    :param verify_ssl: set this to true to verify SSL certificates
+    """
+    openapi_dir = pathlib.Path(__file__).parent / 'openapi'
+    specification_file = openapi_dir / specification
+    specification_file = specification_file.resolve(strict=True)
+
+    registry_auth_config = get_registry_auth_config(registry_auth_config_file)
+
+    repo_auth = get_repo_auth(host, repo_auth_config_file)
 
     repo_config = Configuration(
         host = f'https://{host}',
