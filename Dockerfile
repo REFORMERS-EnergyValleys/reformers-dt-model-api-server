@@ -13,6 +13,7 @@ RUN pip install -r requirements.txt
 RUN pip install docker
 RUN pip install waitress
 RUN pip install git+https://github.com/REFORMERS-EnergyValleys/reformers-dt-model-repository-client.git
+RUN pip install ansistrip
 
 COPY reformers_model_api_server /app/reformers_model_api_server
 

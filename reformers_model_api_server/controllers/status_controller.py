@@ -2,6 +2,7 @@ import connexion
 import docker
 import docker.models.containers
 
+from ansistrip import ansi_strip
 from connexion.problem import problem
 from enum import Enum
 from datetime import datetime
@@ -117,7 +118,9 @@ def get_task_status(
 
         if 1 == len(ls) and 'exited' != ls[0].status:
             # The container is still runnning.
-            return TaskStatus.PENDING, f'generator is {ls[0].status}'
+            raw_logs_tail: str = ls[0].logs(tail=1).decode('utf-8') # Get latest output from logs
+            logs_tail: str = ansi_strip(raw_logs_tail).strip(' -\n\t') # Remove formatting
+            return TaskStatus.PENDING, f'generator is {ls[0].status}, progress: {logs_tail}'
         elif 0 == len(ls) or (1 == len(ls) and 'exited' == ls[0].status):
             try:
                 image_labels = get_model_image_labels(
