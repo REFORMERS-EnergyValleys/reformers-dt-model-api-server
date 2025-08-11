@@ -10,6 +10,17 @@ from reformers_model_repo_client import RepositorySearchResult, RetrieveBlobsApi
 from reformers_model_repo_client.models.container_info import ContainerInfo
 from reformers_model_repo_client.models.container_info_config import ContainerInfoConfig
 
+ANSI_ESCAPE_PATTERN = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')
+LOGS_INDENT_PATTERN = ' -\n\t'
+
+def prune_docker_logs(
+        log_line: str
+    ) -> str:
+    """
+    Remove formatting (ANSI escape codes, indentation, etc.) from a line of docker build logs.
+    """
+    return ANSI_ESCAPE_PATTERN.sub('', log_line).strip(LOGS_INDENT_PATTERN)
+
 def paginated_search(
         search_api_func: Callable,
         add_search_item: Callable[[Any], None]

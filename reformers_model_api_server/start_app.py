@@ -1,4 +1,5 @@
 import connexion
+import docker
 import json
 import pathlib
 
@@ -9,25 +10,44 @@ from warnings import warn
 from reformers_model_api_server import encoder
 from reformers_model_repo_client import Configuration, ApiClient, RepositorySettingsApi
 
-def get_registry_auth_config(
+def apply_registry_auth_config(
         registry_auth_config_file: str
-    ) -> pathlib.Path:
+    ) -> None:
     """
-    Retrieve authentication config for accessing the container registries.
+    Retrieve authentication config for accessing the container registries,
+    then authenticate docker client to these container registries.
 
     :param registry_auth_config_file: path to authentication config file
     :type registry_auth_config_file: str
-    :return: authentication config
-    :rtype: Path
+    :rtype: None
     """
-    registry_auth_config = pathlib.Path(registry_auth_config_file)
-    try:
-        registry_auth_config = registry_auth_config.resolve(strict=True)
-    except OSError:
-        warn(
-            f'path {registry_auth_config} could not be resoved',
-            category=RuntimeWarning
-        )
+    registry_auth_config_file = pathlib.Path(registry_auth_config_file)
+    registry_auth_config_file = registry_auth_config_file.resolve(strict=True)
+
+    with open(registry_auth_config_file, 'r') as f:
+        config = json.load(f)
+        auth_config = config.get('auths', dict())
+
+    docker_client = docker.from_env()
+
+    for registry_url, registry_auth_config in auth_config.items():
+        if not registry_auth_config['auth']:
+            raise RuntimeError(f'Authentication information for registry missing: {registry_url}')
+        registry_auth_info = b64decode(registry_auth_config['auth']).decode('utf-8')
+
+        registry_auth = registry_auth_info.split(':')
+        if not 2 == len(registry_auth):
+            raise RuntimeError('Invalid repository credentials format')
+
+        try:
+            docker_client.login(
+                registry=registry_url, username=registry_auth[0], password=registry_auth[1]
+            )
+        except docker.errors.APIError:
+            warn(
+                f'Docker login to {registry_url} failed',
+                category=RuntimeWarning
+            )
 
     return registry_auth_config
 
@@ -66,8 +86,9 @@ def get_repo_auth(
 def start_app(
         specification: str,
         host: str,
-        registry_auth_config_file: str,
         repo_auth_config_file: str,
+        registry_auth_config_file: str,
+        metagenerator_auth_config_file: str,
         remove_containers: bool,
         verify_ssl: bool
     ) -> connexion.App:
@@ -85,8 +106,6 @@ def start_app(
     specification_file = openapi_dir / specification
     specification_file = specification_file.resolve(strict=True)
 
-    registry_auth_config = get_registry_auth_config(registry_auth_config_file)
-
     repo_auth = get_repo_auth(host, repo_auth_config_file)
 
     repo_config = Configuration(
@@ -95,6 +114,17 @@ def start_app(
         password = repo_auth[1]
     )
     repo_config.verify_ssl = verify_ssl
+
+    apply_registry_auth_config(registry_auth_config_file)
+
+    metagenerator_auth_config_file = pathlib.Path(metagenerator_auth_config_file)
+    try:
+        metagenerator_auth_config_file = metagenerator_auth_config_file.resolve(strict=True)
+    except OSError:
+        warn(
+            f'path {metagenerator_auth_config_file} could not be resoved',
+            category=RuntimeWarning
+        )
 
     flask_app = connexion.App(__name__)
     flask_app.app.json_encoder = encoder.JSONEncoder
@@ -105,7 +135,7 @@ def start_app(
     with flask_app.app.app_context():
 
         current_app.repo_client = ApiClient(repo_config)
-        current_app.registry_auth_config = registry_auth_config
+        current_app.metagenerator_auth_config_file = metagenerator_auth_config_file
 
         repo_settings_api = RepositorySettingsApi(current_app.repo_client)
         current_app.repo_settings = {
@@ -125,9 +155,12 @@ def start_app_from_env():
 
     specification = os.environ.get('SPECIFICATION', default='openapi.yaml')
     host = os.environ.get('HOST', default='reformers-dev.ait.ac.at')
-    registry_auth_config_file = os.environ.get('REGISTRY_AUTH_CONFIG', default='auth-config.json')
-    repo_auth_config_file = os.environ.get('REPO_AUTH_CONFIG', default='auth-config.json')
+    repo_auth_config = os.environ.get('REPO_AUTH_CONFIG', default='repo-auth-config.json')
+    registry_auth_config = os.environ.get('REGISTRY_AUTH_CONFIG', default='registry-auth-config.json')
+    metagenerator_auth_config = os.environ.get('METAGENERATOR_AUTH_CONFIG', default='registry-auth-config.json')
     remove = __parse_to_bool(os.environ.get('REMOVE_CONTAINERS', default='True'))
     verify_ssl = __parse_to_bool(os.environ.get('VERIFY_SSL', default='False'))
 
-    return start_app(specification, host, registry_auth_config_file, repo_auth_config_file, remove, verify_ssl)
+    return start_app(
+        specification, host, repo_auth_config, registry_auth_config, metagenerator_auth_config, remove, verify_ssl
+    )

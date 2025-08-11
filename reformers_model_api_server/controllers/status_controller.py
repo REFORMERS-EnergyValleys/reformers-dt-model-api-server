@@ -2,7 +2,6 @@ import connexion
 import docker
 import docker.models.containers
 
-from ansistrip import ansi_strip
 from connexion.problem import problem
 from enum import Enum
 from datetime import datetime
@@ -13,7 +12,7 @@ from typing import Optional, Tuple, Union
 from reformers_model_api_server.models.info_create_model import InfoCreateModel  # noqa: E501
 from reformers_model_api_server.models.info_model_generator import InfoModelGenerator  # noqa: E501
 from reformers_model_api_server.controllers.model_generators_controller import info_model_generator
-from reformers_model_api_server.controllers.util import container_name, decode_task_id, get_model_image_labels, get_from_nested_dict
+from reformers_model_api_server.controllers.util import container_name, decode_task_id, get_model_image_labels, get_from_nested_dict, prune_docker_logs
 from reformers_model_repo_client.exceptions import NotFoundException
 
 class TaskStatus(str, Enum):
@@ -119,7 +118,7 @@ def get_task_status(
         if 1 == len(ls) and 'exited' != ls[0].status:
             # The container is still runnning.
             raw_logs_tail: str = ls[0].logs(tail=1).decode('utf-8') # Get latest output from logs
-            logs_tail: str = ansi_strip(raw_logs_tail).strip(' -\n\t') # Remove formatting
+            logs_tail: str = prune_docker_logs(raw_logs_tail) # Remove ANSI escape code
             return TaskStatus.PENDING, f'generator is {ls[0].status}, progress: {logs_tail}'
         elif 0 == len(ls) or (1 == len(ls) and 'exited' == ls[0].status):
             try:

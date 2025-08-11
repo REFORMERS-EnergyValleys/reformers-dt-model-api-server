@@ -25,7 +25,9 @@ python3 -m reformers_model_api_server
 
 + `-s TEXT`, `--specification TEXT`: OpenAPI specification file name
 + `-h TEXT`, `--host TEXT`: URL to repository
-+ `-a TEXT`, `--auth-config TEXT`: path to authentication config file (see [`auth-config.json`](./auth-config.json) for an example)
++ `--repo-auth-config TEXT`: path to authentication config file for accessing the repository (see [`repo-auth-config.json`](./repo-auth-config.json) for an example, default: */repo-auth-config.json*)
++ `--registry-auth-config TEXT`: path to authentication config file for accessing the container registries (see [`registry-auth-config.json`](./registry-auth-config.json) for an example, default: */registry-auth-config.json*)
++ `--metagenerator-auth-config TEXT`: path to authentication config file for accessing the container registries passed as input to metagenerators; this must correspond to the path through which the Docker daemon can access and mount the registries authorization config file
 + `--remove-containers BOOLEAN`: set this to false to remove containers after they have exited
 + `--verify-ssl BOOLEAN` set this to false to skip verifying SSL certificates
 + `--help`: show help message and exit
@@ -56,19 +58,24 @@ To run the server in a Docker container, execute the following from the root dir
 
 Linux:
 ```bash
-docker run --rm -d -p 8080:80 -v /var/run/docker.sock:/var/run/docker.sock -v $PWD/auth-config.json:/auth-config.json -e REGISTRY_AUTH_CONFIG=$PWD/auth-config.json reformers-energyvalleys/model-api-server
+docker run --rm -d -p 8080:80 -v /var/run/docker.sock:/var/run/docker.sock -v $PWD/repo-auth-config.json:/repo-auth-config.json -v $PWD/registry-auth-config.json:/registry-auth-config.json -e METAGENERATOR_AUTH_CONFIG=$PWD/registry-auth-config.json reformers-energyvalleys/model-api-server
 ```
 
 Windows:
 ```cmd
-docker run --rm -d -p 8080:80 -v /var/run/docker.sock:/var/run/docker.sock -v %CD%\auth-config.json:/auth-config.json -e REGISTRY_AUTH_CONFIG=%CD%\auth-config.json reformers-energyvalleys/model-api-server
+docker run --rm -d -p 8080:80 -v /var/run/docker.sock:/var/run/docker.sock -v %CD%\repo-auth-config.json:/repo-auth-config.json -v %CD%\registry-auth-config.json:/registry-auth-config.json -e METAGENERATOR_AUTH_CONFIG=%CD%\registry-auth-config.json reformers-energyvalleys/model-api-server
 ```
+
+**IMPORTANT**:
+Files `repo-auth-config.json` and `registry-auth-config.json` are mounted to their default locations within the container.
+However, environment variable `METAGENERATOR_AUTH_CONFIG` points to the path through which the Docker daemon can access and mount file `registry-auth-config.json` (i.e., the path in the host file system running the Docker daemon and not the path in the container's local file system).
 
 *Options*: can be set as as environment variables for the container (flag `-e` / `--env`)
 
 + `SPECIFICATION`: OpenAPI specification file name
 + `HOST`: URL to repository
-+ `REGISTRY_AUTH_CONFIG`: path to authentication config file for accessing the container registries
 + `REPO_AUTH_CONFIG`: path to authentication config file for accessing the repository
++ `REGISTRY_AUTH_CONFIG`: path to authentication config file for accessing the container registries
++ `METAGENERATOR_AUTH_CONFIG`: path to authentication config file for accessing the container registries passed as input to metagenerators
 + `REMOVE_CONTAINERS`: set this to `false` (or `0`) to remove containers after they have exited
 + `VERIFY_SSL`: set this to `false` (or `0`) to skip verifying SSL certificates

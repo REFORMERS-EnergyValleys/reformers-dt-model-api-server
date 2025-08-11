@@ -93,7 +93,7 @@ def create_model(
             container : docker.models.containers.Container = docker_client.containers.run(
                 name=container_name(model_name, model_tag, creation_date),
                 image=f'{registry_prefix}/{generator_name}:{generator_tag}',
-                volumes=[f'{current_app.registry_auth_config}:/workspace/config.json:ro'],
+                volumes=[f'{current_app.metagenerator_auth_config_file}:/workspace/config.json:ro'],
                 environment=env,
                 detach=True,
                 remove=current_app.remove_containers,
