@@ -10,6 +10,8 @@ from functools import partial
 from time import sleep
 from typing import Any, Union, Tuple
 from urllib.parse import urlparse
+from warnings import warn
+
 
 from reformers_model_api_server.models.info_create_model import InfoCreateModel  # noqa: E501
 from reformers_model_api_server.models.info_model import InfoModel  # noqa: E501
@@ -20,6 +22,33 @@ from reformers_model_api_server.controllers.model_generators_controller import i
 from reformers_model_api_server.controllers.util import get_model_artifact_asset_type, paginated_search, create_task_id, container_name, get_model_image_labels, get_from_nested_dict
 
 from reformers_model_repo_client import HandleArtifactsApi, SearchRepositoryApi
+
+def registry_login() -> docker.DockerClient:
+    """
+    Authenticate to container registries and return docker client.
+
+    :return: docker client
+    :rtype: DockerClient
+    """
+    docker_client = docker.from_env()
+
+    with current_app.app_context():
+
+        for registry_url, registry_auth_info in current_app.registry_auth_config.items():
+            try:
+                docker_client.login(
+                    registry=registry_url,
+                    username=registry_auth_info[0],
+                    password=registry_auth_info[1],
+                    reauth=False
+                )
+            except docker.errors.APIError: # type: ignore
+                warn(
+                    f'Docker login to {registry_url} failed',
+                    category=RuntimeWarning
+                )
+
+    return docker_client
 
 def create_model(
         generator_name: str,
@@ -69,12 +98,12 @@ def create_model(
             creation_date = datetime.now(timezone.utc)
 
             env = info_create_model.parameters.copy() if info_create_model.parameters else dict()
-            env['MODEL_NAME'] = model_name
-            env['MODEL_TAG'] = model_tag
-            env['CREATED'] = creation_date.isoformat()
-            env['EXTRA_FLAGS'] = '--cache=true'
+            env['MODEL_NAME'] = model_name # type: ignore
+            env['MODEL_TAG'] = model_tag # type: ignore
+            env['CREATED'] = creation_date.isoformat() # type: ignore
+            env['EXTRA_FLAGS'] = '--cache=true' # type: ignore
             if not current_app.repo_client.configuration.verify_ssl:
-                env['EXTRA_FLAGS'] = '--skip-tls-verify ' + (env.get('EXTRA_FLAGS', str()))
+                env['EXTRA_FLAGS'] = '--skip-tls-verify ' + (env.get('EXTRA_FLAGS', str())) # type: ignore
 
             registry_info = current_app.repo_settings['model-generators']
             registry_format = registry_info.format
@@ -88,16 +117,22 @@ def create_model(
             registry_host = urlparse(current_app.repo_client.configuration.host).hostname
             registry_prefix = f'{registry_host}:{registry_port}'
 
-            docker_client = docker.from_env()
+            image_name = f'{registry_prefix}/{generator_name}:{generator_tag}'
 
+            docker_client = registry_login()
+
+            # Pull the image (this ensures the latest version is pulled)
+            docker_client.images.pull(image_name)
+
+            # Run the container
             container : docker.models.containers.Container = docker_client.containers.run(
                 name=container_name(model_name, model_tag, creation_date),
-                image=f'{registry_prefix}/{generator_name}:{generator_tag}',
+                image=image_name,
                 volumes=[f'{current_app.metagenerator_auth_config_file}:/workspace/config.json:ro'],
-                environment=env,
+                environment=env, # type: ignore
                 detach=True,
                 remove=current_app.remove_containers,
-                )
+                ) # type: ignore
 
             timeout = 20
             sleep_time = 1

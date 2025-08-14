@@ -1,5 +1,4 @@
 import connexion
-import docker
 import json
 import pathlib
 
@@ -10,44 +9,36 @@ from warnings import warn
 from reformers_model_api_server import encoder
 from reformers_model_repo_client import Configuration, ApiClient, RepositorySettingsApi
 
-def apply_registry_auth_config(
+def get_registry_auth_config(
         registry_auth_config_file: str
-    ) -> None:
+    ) -> dict[str, tuple[str, str]]:
     """
-    Retrieve authentication config for accessing the container registries,
-    then authenticate docker client to these container registries.
+    Retrieve authentication config for accessing the container registries.
 
     :param registry_auth_config_file: path to authentication config file
     :type registry_auth_config_file: str
-    :rtype: None
+    :return: dict with username / password for all registries
+    :rtype: dict[str, tuple[str, str]]
     """
-    registry_auth_config_file = pathlib.Path(registry_auth_config_file)
-    registry_auth_config_file = registry_auth_config_file.resolve(strict=True)
+    registry_auth_config_path = pathlib.Path(registry_auth_config_file)
+    registry_auth_config_path = registry_auth_config_path.resolve(strict=True)
 
-    with open(registry_auth_config_file, 'r') as f:
+    with open(registry_auth_config_path, 'r') as f:
         config = json.load(f)
         auth_config = config.get('auths', dict())
 
-    docker_client = docker.from_env()
+    registry_auth_config = dict()
 
-    for registry_url, registry_auth_config in auth_config.items():
-        if not registry_auth_config['auth']:
+    for registry_url, registry_auth_info in auth_config.items():
+        if not registry_auth_info['auth']:
             raise RuntimeError(f'Authentication information for registry missing: {registry_url}')
-        registry_auth_info = b64decode(registry_auth_config['auth']).decode('utf-8')
+        registry_auth_info = b64decode(registry_auth_info['auth']).decode('utf-8')
 
         registry_auth = registry_auth_info.split(':')
         if not 2 == len(registry_auth):
             raise RuntimeError('Invalid repository credentials format')
 
-        try:
-            docker_client.login(
-                registry=registry_url, username=registry_auth[0], password=registry_auth[1]
-            )
-        except docker.errors.APIError:
-            warn(
-                f'Docker login to {registry_url} failed',
-                category=RuntimeWarning
-            )
+        registry_auth_config[registry_url] = (registry_auth[0], registry_auth[1])
 
     return registry_auth_config
 
@@ -81,7 +72,7 @@ def get_repo_auth(
     if not 2 == len(repo_auth):
         raise RuntimeError('Invalid repository credentials format')
 
-    return repo_auth
+    return tuple(repo_auth) # type: ignore
 
 def start_app(
         specification: str,
@@ -106,6 +97,8 @@ def start_app(
     specification_file = openapi_dir / specification
     specification_file = specification_file.resolve(strict=True)
 
+    registry_auth_config = get_registry_auth_config(registry_auth_config_file)
+
     repo_auth = get_repo_auth(host, repo_auth_config_file)
 
     repo_config = Configuration(
@@ -115,14 +108,12 @@ def start_app(
     )
     repo_config.verify_ssl = verify_ssl
 
-    apply_registry_auth_config(registry_auth_config_file)
-
-    metagenerator_auth_config_file = pathlib.Path(metagenerator_auth_config_file)
+    metagenerator_auth_config_path = pathlib.Path(metagenerator_auth_config_file)
     try:
-        metagenerator_auth_config_file = metagenerator_auth_config_file.resolve(strict=True)
+        metagenerator_auth_config_path = metagenerator_auth_config_path.resolve(strict=True)
     except OSError:
         warn(
-            f'path {metagenerator_auth_config_file} could not be resoved',
+            f'path {metagenerator_auth_config_file} could not be resolved',
             category=RuntimeWarning
         )
 
@@ -135,7 +126,8 @@ def start_app(
     with flask_app.app.app_context():
 
         current_app.repo_client = ApiClient(repo_config)
-        current_app.metagenerator_auth_config_file = metagenerator_auth_config_file
+        current_app.registry_auth_config = registry_auth_config
+        current_app.metagenerator_auth_config_file = metagenerator_auth_config_path
 
         repo_settings_api = RepositorySettingsApi(current_app.repo_client)
         current_app.repo_settings = {
