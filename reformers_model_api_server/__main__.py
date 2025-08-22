@@ -21,8 +21,18 @@ class PrefixMiddleware:
 @click.option('--metagenerator-auth-config', default='registry-auth-config.json', help='path to authentication config file for accessing the container registries passed as input to metagenerators')
 @click.option('--remove-containers', default=True, help='set this to false to remove containers after they have exited')
 @click.option('--verify-ssl', default=False, help='set this to true to verify SSL certificates')
-def main(specification, host, repo_auth_config, registry_auth_config, metagenerator_auth_config, remove_containers, verify_ssl):
-    flask_app = start_app(specification, host, repo_auth_config, registry_auth_config, metagenerator_auth_config, remove_containers, verify_ssl)
+@click.option('--cache-layers', default=True, help='set this to true to enable caching of layers')
+@click.option('--cache-base-images', default=False, help='set this to true to enable caching of base images')
+def main(
+    specification, host, repo_auth_config,
+    registry_auth_config, metagenerator_auth_config,
+    remove_containers, verify_ssl, cache_layers, cache_base_images
+):
+    flask_app = start_app(
+        specification, host, repo_auth_config,
+        registry_auth_config, metagenerator_auth_config,
+        remove_containers, verify_ssl, cache_layers, cache_base_images
+    )
     flask_app.app.wsgi_app = PrefixMiddleware(flask_app.app.wsgi_app, prefix='/api')
     flask_app.run(port=8080)
 

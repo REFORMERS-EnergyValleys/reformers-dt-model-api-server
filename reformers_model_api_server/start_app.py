@@ -81,7 +81,9 @@ def start_app(
         registry_auth_config_file: str,
         metagenerator_auth_config_file: str,
         remove_containers: bool,
-        verify_ssl: bool
+        verify_ssl: bool,
+        cache_layers: bool,
+        cache_base_images: bool
     ) -> connexion.App:
     """
     Start the server running the model API app.
@@ -92,6 +94,9 @@ def start_app(
     :param repo_auth_config_file: path to authentication config file for accessing the repository
     :param remove_containers: set this to false to remove containers after they have exited
     :param verify_ssl: set this to true to verify SSL certificates
+    :param cache_layers: set this to true to enable caching of layers
+    :param cache_base_images: set this to true to enable caching of base images
+
     """
     openapi_dir = pathlib.Path(__file__).parent / 'openapi'
     specification_file = openapi_dir / specification
@@ -135,6 +140,13 @@ def start_app(
             }
 
         current_app.remove_containers = remove_containers
+        current_app.cache_layers = cache_layers
+        current_app.cache_base_images = cache_base_images
+
+        if cache_base_images:
+            cache_path = pathlib.Path.home() / 'cache'
+            cache_path.mkdir(parents=True, exist_ok=True)
+            current_app.cache_path = cache_path
 
     return flask_app
 
@@ -152,7 +164,11 @@ def start_app_from_env():
     metagenerator_auth_config = os.environ.get('METAGENERATOR_AUTH_CONFIG', default='registry-auth-config.json')
     remove = __parse_to_bool(os.environ.get('REMOVE_CONTAINERS', default='True'))
     verify_ssl = __parse_to_bool(os.environ.get('VERIFY_SSL', default='False'))
+    cache_layers = __parse_to_bool(os.environ.get('CACHE_LAYERS', default='True'))
+    cache_base_images = __parse_to_bool(os.environ.get('CACHE_BASE_IMAGES', default='False'))
 
     return start_app(
-        specification, host, repo_auth_config, registry_auth_config, metagenerator_auth_config, remove, verify_ssl
+        specification, host, repo_auth_config,
+        registry_auth_config, metagenerator_auth_config,
+        remove, verify_ssl, cache_layers, cache_base_images
     )

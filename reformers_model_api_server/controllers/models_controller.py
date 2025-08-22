@@ -2,6 +2,7 @@ import json
 import connexion
 import docker
 import docker.models.containers
+import pathlib
 
 from connexion.problem import problem
 from datetime import datetime, timezone
@@ -49,6 +50,40 @@ def registry_login() -> docker.DockerClient:
                 )
 
     return docker_client
+
+def cache_base_images(
+        info_generator: InfoModelGenerator,
+        docker_client: docker.DockerClient,
+        create_model_container_name: str,
+        cache_path: pathlib.Path,
+        remove_containers: bool
+    ) -> None:
+    """
+    kaniko can cache images in a local directory that can be volume mounted into the kaniko pod.
+    To do so, the cache must first be populated, as it is read-only.
+    """
+    base_images = []
+
+    # Retrieve info about required base images from generator
+    try:
+        cache_info_raw = info_generator.build.get('cache')
+        cache_info = json.loads(cache_info_raw)
+        for base_image in cache_info:
+            base_images.append(f'--image={base_image}')
+    except Exception as e:
+        return
+
+    # Run kaniko's cache warmer for base images
+    docker_client.containers.run(
+        name='chache-warmer-' + create_model_container_name,
+        image='gcr.io/kaniko-project/warmer:latest',
+        command=base_images,
+        volumes=[f'{cache_path}:/cache'],
+        detach=False,
+        stderr=True,
+        remove=remove_containers
+    ) # type: ignore
+
 
 def create_model(
         generator_name: str,
@@ -101,9 +136,10 @@ def create_model(
             env['MODEL_NAME'] = model_name # type: ignore
             env['MODEL_TAG'] = model_tag # type: ignore
             env['CREATED'] = creation_date.isoformat() # type: ignore
-            env['EXTRA_FLAGS'] = '--cache=true' # type: ignore
+            if current_app.cache_layers:
+                env['EXTRA_FLAGS'] = '--cache=true' # type: ignore
             if not current_app.repo_client.configuration.verify_ssl:
-                env['EXTRA_FLAGS'] = '--skip-tls-verify ' + (env.get('EXTRA_FLAGS', str())) # type: ignore
+                env['EXTRA_FLAGS'] = '--skip-tls-verify ' + env.get('EXTRA_FLAGS', str()) # type: ignore
 
             registry_info = current_app.repo_settings['model-generators']
             registry_format = registry_info.format
@@ -124,11 +160,27 @@ def create_model(
             # Pull the image (this ensures the latest version is pulled)
             docker_client.images.pull(image_name)
 
+            # Use unique container name
+            create_model_container_name = container_name(model_name, model_tag, creation_date)
+
+            # Define volumes
+            volumes=[f'{current_app.metagenerator_auth_config_file}:/workspace/config.json:ro']
+
+            # Caching of base images
+            if current_app.cache_layers and current_app.cache_base_images:
+                # Run cache warmer
+                cache_base_images(
+                    info_generator, docker_client, create_model_container_name,
+                    current_app.cache_path, current_app.remove_containers
+                ) # type: ignore
+                # Append local folder with base images to volumes
+                volumes.append(f'{current_app.cache_path}:/cache')
+
             # Run the container
             container : docker.models.containers.Container = docker_client.containers.run(
-                name=container_name(model_name, model_tag, creation_date),
+                name=create_model_container_name,
                 image=image_name,
-                volumes=[f'{current_app.metagenerator_auth_config_file}:/workspace/config.json:ro'],
+                volumes=volumes,
                 environment=env, # type: ignore
                 detach=True,
                 remove=current_app.remove_containers,
