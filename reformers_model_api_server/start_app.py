@@ -1,5 +1,6 @@
 import connexion
 import json
+import logging
 import pathlib
 
 from base64 import b64decode
@@ -128,6 +129,9 @@ def start_app(
                 arguments={'title': 'REFORMERS Digital Twin: Model API'},
                 pythonic_params=True)
 
+    # Set logger level
+    flask_app.app.logger.setLevel(logging.INFO)
+
     with flask_app.app.app_context():
 
         current_app.repo_client = ApiClient(repo_config)
@@ -147,6 +151,7 @@ def start_app(
             cache_path = pathlib.Path.home() / 'cache'
             cache_path.mkdir(parents=True, exist_ok=True)
             current_app.cache_path = cache_path
+            current_app.logger.info(f'cache path: {cache_path}')
 
     return flask_app
 
