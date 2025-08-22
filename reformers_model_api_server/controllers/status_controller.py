@@ -110,9 +110,10 @@ def get_task_status(
 
         docker_client = docker.from_env()
 
+        cn = container_name(model_name, model_tag, task_creation_date)
         ls = docker_client.containers.list(
             all=True,
-            filters=dict(name=container_name(model_name, model_tag, task_creation_date))
+            filters=dict(name=f'^/{cn}$') # regexp search: name must fit exactly
             )
 
         if 1 == len(ls) and 'exited' != ls[0].status:
