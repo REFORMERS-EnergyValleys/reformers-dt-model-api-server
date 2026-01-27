@@ -72,7 +72,7 @@ def info_model_generator(
             generator_name=generator_name,
             generator_tag=generator_tag,
             config=generator_info.get('config', dict()),
-            parameters=generator_info.get('parameters', dict()),
+            parameters=generator_info.get('generation_parameters', dict()),
             build=generator_info.get('build', dict()),
         )
 
