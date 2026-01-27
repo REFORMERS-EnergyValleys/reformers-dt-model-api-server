@@ -322,8 +322,6 @@ def search_add_model_images_with_tags(
             generator_name, generator_tag, model_name, model_version, current_app.repo_client
         )
 
-    print('IMAGE_LABELS:', image_labels)
-
     # Retrieve generation parameters from config labels.
     generation_parameters = get_from_nested_dict(
         image_labels, [generator_name, generator_tag, model_name, model_version]

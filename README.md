@@ -22,7 +22,7 @@ python3 -m reformers_model_api_server
 + `-s TEXT`, `--specification TEXT`: OpenAPI specification file name
 + `-h TEXT`, `--host TEXT`: URL to repository
 + `--repo-auth-config TEXT`: path to authentication config file for accessing the repository (see [`repo-auth-config.json`](./repo-auth-config.json) for an example, default: */repo-auth-config.json*)
-+ `--registry-auth-config TEXT`: path to authentication config file for accessing the container registries (see [`registry-auth-config.json`](./registry-auth-config.json) for an example, default: */registry-auth-config.json*)
++ `--registry-auth-config TEXT`: path to authentication config file for accessing the container registries (see [`registry-auth-config.json`](./registry-auth-config.json) for an example, default: *registry-auth-config.json*)
 + `--metagenerator-auth-config TEXT`: path to authentication config file for accessing the container registries passed as input to metagenerators; this must correspond to the path through which the Docker daemon can access and mount the registries authorization config file
 + `--remove-containers BOOLEAN`: set this to false to remove containers after they have exited
 + `--verify-ssl BOOLEAN` set this to false to skip verifying SSL certificates
